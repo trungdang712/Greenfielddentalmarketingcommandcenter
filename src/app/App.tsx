@@ -11,6 +11,7 @@ import { Inbox as InboxView } from "@/app/components/Inbox";
 import { Performance } from "@/app/components/Performance";
 import { BrandLibrary } from "@/app/components/BrandLibrary";
 import { SocialListening } from "@/app/components/SocialListening";
+import { Settings } from "@/app/components/Settings";
 import { Toaster } from "@/app/components/ui/sonner";
 
 export default function App() {
@@ -53,6 +54,8 @@ export default function App() {
       case "/library/brand":
       case "/library/assets":
         return <BrandLibrary view={activeView} />;
+      case "/settings":
+        return <Settings />;
       default:
         return <Dashboard userName={currentUser.name} userRole={currentUser.role} />;
     }
