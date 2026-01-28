@@ -342,17 +342,19 @@ export function Performance({ view }: PerformanceProps) {
           <CardTitle>Performance Trend</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={performanceTrendData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis domain={[0, 100]} />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="score" stroke="#0d9488" name="Your Score" strokeWidth={2} />
-              <Line type="monotone" dataKey="target" stroke="#94a3b8" name="Target" strokeDasharray="5 5" />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="w-full h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={performanceTrendData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis domain={[0, 100]} />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="score" stroke="#0d9488" name="Your Score" strokeWidth={2} />
+                <Line type="monotone" dataKey="target" stroke="#94a3b8" name="Target" strokeDasharray="5 5" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
 

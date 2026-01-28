@@ -14,26 +14,50 @@ import {
   X,
   User,
   Calendar,
-  Phone,
   Mail,
-  MapPin,
   Image as ImageIcon,
   Video,
   Download,
-  Send,
-  MessageCircle,
   Clock,
   CheckSquare,
   FileCheck,
   Sparkles,
+  ArrowRight,
+  BarChart3,
+  Lightbulb,
+  Plus
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/app/components/ui/dialog";
+import { Label } from "@/app/components/ui/label";
+
+interface ContentOpportunity {
+  id: number;
+  type: string;
+  title: string;
+  from: string;
+  fromEmail: string;
+  date: string;
+  priority: string;
+  consentStatus: string;
+  description: string;
+  status: string;
+  patientInfo: any;
+  consentDetails: any;
+  mediaAttached: any;
+  suggestedContent: string[];
+  estimatedReach: string;
+  contentValue: string;
+}
 
 export function Inbox() {
-  const [selectedOpportunity, setSelectedOpportunity] = useState<number | null>(null);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<ContentOpportunity | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [convertType, setConvertType] = useState<"task" | "proposal">("task");
   const [comment, setComment] = useState("");
 
-  const contentOpportunities = [
+  const [contentOpportunities, setContentOpportunities] = useState<ContentOpportunity[]>([
     {
       id: 1,
       type: "testimonial",
@@ -46,7 +70,6 @@ export function Inbox() {
       description:
         "Bệnh nhân rất hài lòng sau khi cấy ghép implant, đồng ý quay video testimonial và chụp ảnh before/after.",
       status: "new",
-      // Extended details
       patientInfo: {
         name: "Nguyễn Thị Lan Anh (Patient ID: PT-12458)",
         age: 42,
@@ -76,11 +99,6 @@ export function Inbox() {
       ],
       estimatedReach: "8,000 - 12,000",
       contentValue: "High - Direct patient testimonial with strong results",
-      timeline: [
-        { date: "Jan 5, 10:30 AM", event: "Opportunity submitted", user: "Nguyễn Văn C" },
-        { date: "Jan 5, 11:15 AM", event: "Consent verified", user: "System" },
-        { date: "Jan 5, 2:20 PM", event: "Photos uploaded", user: "Nguyễn Văn C" },
-      ],
     },
     {
       id: 2,
@@ -122,10 +140,6 @@ export function Inbox() {
       ],
       estimatedReach: "5,000 - 8,000",
       contentValue: "Medium - Good visual results, pending consent",
-      timeline: [
-        { date: "Jan 4, 9:15 AM", event: "Opportunity submitted", user: "Trần Thị D" },
-        { date: "Jan 4, 9:30 AM", event: "Consent request sent to patient", user: "System" },
-      ],
     },
     {
       id: 3,
@@ -167,65 +181,11 @@ export function Inbox() {
       ],
       estimatedReach: "12,000 - 18,000",
       contentValue: "Very High - Long-term transformation with excellent documentation",
-      timeline: [
-        { date: "Jan 3, 2:00 PM", event: "Opportunity submitted", user: "BS. Lê Văn E" },
-        { date: "Jan 3, 2:15 PM", event: "Consent verified", user: "System" },
-        { date: "Jan 3, 3:45 PM", event: "Accepted by Marketing", user: "Marketing Team" },
-        { date: "Jan 3, 4:20 PM", event: "Task created", user: "System" },
-      ],
     },
-  ];
-
-  const taskRequests = [
-    {
-      id: 1,
-      type: "design",
-      title: "Sales presentation slides",
-      from: "Sales Team (Lê Văn E)",
-      date: "Jan 5, 2024",
-      urgency: "normal",
-      deadline: "Jan 10",
-      description: "Cần thiết kế bộ slides giới thiệu dịch vụ implant cho buổi họp với khách hàng doanh nghiệp.",
-      status: "new",
-    },
-    {
-      id: 2,
-      type: "content",
-      title: "Q&A content for website",
-      from: "Customer Service (Phạm Thị F)",
-      date: "Jan 4, 2024",
-      urgency: "low",
-      deadline: "Jan 15",
-      description:
-        "Viết nội dung Q&A về dịch vụ tẩy trắng răng cho trang web, dựa trên các câu hỏi thường gặp từ khách hàng.",
-      status: "new",
-    },
-    {
-      id: 3,
-      type: "video",
-      title: "Clinic tour video",
-      from: "Operations (Hoàng Văn G)",
-      date: "Jan 3, 2024",
-      urgency: "normal",
-      deadline: "Jan 12",
-      description: "Quay video giới thiệu cơ sở vật chất phòng khám sau khi nâng cấp.",
-      status: "accepted",
-    },
-  ];
+  ]);
 
   const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "testimonial":
-      case "before-after":
-      case "case-study":
-        return <Camera className="w-5 h-5" />;
-      case "design":
-      case "content":
-      case "video":
-        return <FileText className="w-5 h-5" />;
-      default:
-        return <FileText className="w-5 h-5" />;
-    }
+    return <Camera className="w-5 h-5" />;
   };
 
   const getTypeLabel = (type: string) => {
@@ -233,575 +193,560 @@ export function Inbox() {
       testimonial: "Testimonial",
       "before-after": "Before/After",
       "case-study": "Case Study",
-      design: "Design",
-      content: "Content",
-      video: "Video",
     };
     return labels[type] || type;
   };
 
-  const handleViewDetails = (id: number) => {
-    setSelectedOpportunity(id);
-  };
-
-  const handleCloseDetails = () => {
-    setSelectedOpportunity(null);
-    setComment("");
+  const handleOpenDetail = (opportunity: ContentOpportunity) => {
+    setSelectedOpportunity(opportunity);
+    setIsDetailOpen(true);
   };
 
   const handleAccept = () => {
-    console.log("Accepted opportunity:", selectedOpportunity);
-    handleCloseDetails();
+    if (selectedOpportunity) {
+      setContentOpportunities(prev =>
+        prev.map(opp => opp.id === selectedOpportunity.id ? { ...opp, status: "accepted" } : opp)
+      );
+      setIsDetailOpen(false);
+    }
   };
 
   const handleDecline = () => {
-    console.log("Declined opportunity:", selectedOpportunity);
-    handleCloseDetails();
+    if (selectedOpportunity) {
+      setContentOpportunities(prev =>
+        prev.map(opp => opp.id === selectedOpportunity.id ? { ...opp, status: "declined" } : opp)
+      );
+      setIsDetailOpen(false);
+    }
   };
 
-  const handleSendComment = () => {
-    console.log("Comment sent:", comment);
-    setComment("");
+  const handleConvert = (type: "task" | "proposal") => {
+    setConvertType(type);
+    setIsConvertModalOpen(true);
   };
 
-  const selectedOpp = contentOpportunities.find((o) => o.id === selectedOpportunity);
+  const getStatistics = () => {
+    const newOpp = contentOpportunities.filter(o => o.status === "new").length;
+    const accepted = contentOpportunities.filter(o => o.status === "accepted").length;
+    const withConsent = contentOpportunities.filter(o => o.consentStatus === "obtained").length;
+    const highValue = contentOpportunities.filter(o => o.contentValue.startsWith("High") || o.contentValue.startsWith("Very High")).length;
 
-  const renderOpportunityCard = (opportunity: (typeof contentOpportunities)[0]) => (
-    <Card key={opportunity.id} className={opportunity.status === "new" ? "border-l-4 border-l-primary" : ""}>
-      <CardContent className="p-5">
-        <div className="space-y-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-3">
-              {opportunity.priority === "hot" && <div className="text-destructive">{getTypeIcon(opportunity.type)}</div>}
-              {opportunity.priority !== "hot" && <div className="text-primary">{getTypeIcon(opportunity.type)}</div>}
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  {opportunity.priority === "hot" && (
-                    <Badge variant="destructive" className="text-xs">
-                      🔥 HOT
-                    </Badge>
-                  )}
-                  <Badge variant="outline" className="text-xs">
-                    {getTypeLabel(opportunity.type)}
-                  </Badge>
-                </div>
-                <h3 className="font-semibold mb-1">{opportunity.title}</h3>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                  <span>From: {opportunity.from}</span>
-                  <span>•</span>
-                  <span>{opportunity.date}</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {opportunity.consentStatus === "obtained" && (
-                <Badge variant="default" className="text-xs">
-                  ✓ Consent Obtained
-                </Badge>
-              )}
-              {opportunity.consentStatus === "pending" && (
-                <Badge variant="secondary" className="text-xs">
-                  Consent Pending
-                </Badge>
-              )}
-            </div>
-          </div>
+    return { newOpp, accepted, withConsent, highValue };
+  };
 
-          <p className="text-sm">{opportunity.description}</p>
-
-          {opportunity.status === "new" && (
-            <div className="flex items-center gap-2 pt-2 border-t">
-              <Button size="sm" onClick={() => handleViewDetails(opportunity.id)}>
-                View Details
-              </Button>
-              <Button variant="default" size="sm" className="gap-2">
-                <CheckCircle className="w-4 h-4" />
-                Accept
-              </Button>
-              <Button variant="outline" size="sm" className="gap-2">
-                <XCircle className="w-4 h-4" />
-                Decline
-              </Button>
-              <Button variant="ghost" size="sm" className="gap-2">
-                <AlertCircle className="w-4 h-4" />
-                Need More Info
-              </Button>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  const renderTaskCard = (request: (typeof taskRequests)[0]) => (
-    <Card key={request.id} className={request.status === "new" ? "border-l-4 border-l-accent" : ""}>
-      <CardContent className="p-5">
-        <div className="space-y-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-3">
-              {getTypeIcon(request.type)}
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="outline" className="text-xs">
-                    {getTypeLabel(request.type)} Request
-                  </Badge>
-                  {request.urgency === "high" && (
-                    <Badge variant="destructive" className="text-xs">
-                      Urgent
-                    </Badge>
-                  )}
-                </div>
-                <h3 className="font-semibold mb-1">{request.title}</h3>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                  <span>From: {request.from}</span>
-                  <span>•</span>
-                  <span>{request.date}</span>
-                </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-muted-foreground">Deadline</div>
-              <div className="font-medium">{request.deadline}</div>
-            </div>
-          </div>
-
-          <p className="text-sm">{request.description}</p>
-
-          {request.status === "new" && (
-            <div className="flex items-center gap-2 pt-2 border-t">
-              <Button variant="default" size="sm" className="gap-2">
-                <CheckCircle className="w-4 h-4" />
-                Accept
-              </Button>
-              <Button variant="outline" size="sm" className="gap-2">
-                <XCircle className="w-4 h-4" />
-                Decline
-              </Button>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+  const stats = getStatistics();
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div>
         <h1 className="text-2xl font-semibold mb-1">Inbox</h1>
-        <p className="text-muted-foreground">Content opportunities và task requests từ các bộ phận khác</p>
+        <p className="text-muted-foreground">Content opportunities từ các bộ phận trong tổ chức</p>
       </div>
 
-      <Tabs defaultValue="opportunities" className="space-y-6">
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">New Opportunities</p>
+                <p className="text-2xl font-semibold">{stats.newOpp}</p>
+              </div>
+              <InboxIcon className="w-8 h-8 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Accepted</p>
+                <p className="text-2xl font-semibold">{stats.accepted}</p>
+              </div>
+              <CheckCircle className="w-8 h-8 text-success" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">With Consent</p>
+                <p className="text-2xl font-semibold">{stats.withConsent}</p>
+              </div>
+              <FileCheck className="w-8 h-8 text-info" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">High Value</p>
+                <p className="text-2xl font-semibold">{stats.highValue}</p>
+              </div>
+              <BarChart3 className="w-8 h-8 text-warning" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Opportunities List */}
+      <Tabs defaultValue="new">
         <TabsList>
-          <TabsTrigger value="opportunities">
-            <Camera className="w-4 h-4 mr-2" />
-            Content Opportunities
-            <Badge variant="destructive" className="ml-2">
-              {contentOpportunities.filter((o) => o.status === "new").length}
-            </Badge>
+          <TabsTrigger value="new">
+            New ({contentOpportunities.filter(o => o.status === "new").length})
           </TabsTrigger>
-          <TabsTrigger value="tasks">
-            <FileText className="w-4 h-4 mr-2" />
-            Task Requests
-            <Badge variant="secondary" className="ml-2">
-              {taskRequests.filter((r) => r.status === "new").length}
-            </Badge>
+          <TabsTrigger value="accepted">
+            Accepted ({contentOpportunities.filter(o => o.status === "accepted").length})
           </TabsTrigger>
+          <TabsTrigger value="all">All</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="opportunities" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Content Opportunities</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Các cơ hội content từ testimonials, case studies, và before/after cases
-              </p>
-            </CardHeader>
-          </Card>
+        <TabsContent value="new" className="space-y-3 mt-4">
+          {contentOpportunities
+            .filter(o => o.status === "new")
+            .map((opportunity) => (
+              <Card
+                key={opportunity.id}
+                className="border-l-4 border-l-primary cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => handleOpenDetail(opportunity)}
+              >
+                <CardContent className="p-5">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className={opportunity.priority === "hot" ? "text-destructive" : "text-primary"}>
+                          {getTypeIcon(opportunity.type)}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            {opportunity.priority === "hot" && (
+                              <Badge variant="destructive" className="text-xs">
+                                🔥 HOT
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="text-xs">
+                              {getTypeLabel(opportunity.type)}
+                            </Badge>
+                          </div>
+                          <h3 className="font-semibold mb-1">{opportunity.title}</h3>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                            <span>From: {opportunity.from}</span>
+                            <span>•</span>
+                            <span>{opportunity.date}</span>
+                          </div>
+                          <p className="text-sm line-clamp-2">{opportunity.description}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        {opportunity.consentStatus === "obtained" && (
+                          <Badge variant="default" className="text-xs">
+                            ✓ Consent
+                          </Badge>
+                        )}
+                        {opportunity.consentStatus === "pending" && (
+                          <Badge variant="secondary" className="text-xs">
+                            Pending
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
 
-          <Tabs defaultValue="new">
-            <TabsList>
-              <TabsTrigger value="new">New ({contentOpportunities.filter((o) => o.status === "new").length})</TabsTrigger>
-              <TabsTrigger value="accepted">Accepted</TabsTrigger>
-              <TabsTrigger value="all">All</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="new" className="space-y-3 mt-4">
-              {contentOpportunities.filter((o) => o.status === "new").map(renderOpportunityCard)}
-            </TabsContent>
-
-            <TabsContent value="accepted" className="space-y-3 mt-4">
-              {contentOpportunities.filter((o) => o.status === "accepted").map(renderOpportunityCard)}
-            </TabsContent>
-
-            <TabsContent value="all" className="space-y-3 mt-4">
-              {contentOpportunities.map(renderOpportunityCard)}
-            </TabsContent>
-          </Tabs>
+                    <div className="flex items-center gap-2 pt-2 border-t">
+                      <Button
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDetail(opportunity);
+                        }}
+                      >
+                        View Details
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="gap-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOpportunity(opportunity);
+                          handleAccept();
+                        }}
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Accept
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOpportunity(opportunity);
+                          handleDecline();
+                        }}
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Decline
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
         </TabsContent>
 
-        <TabsContent value="tasks" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Task Requests</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Yêu cầu tạo content, design, video từ các bộ phận khác trong tổ chức
-              </p>
-            </CardHeader>
-          </Card>
+        <TabsContent value="accepted" className="space-y-3 mt-4">
+          {contentOpportunities
+            .filter(o => o.status === "accepted")
+            .map((opportunity) => (
+              <Card
+                key={opportunity.id}
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => handleOpenDetail(opportunity)}
+              >
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className="text-primary">{getTypeIcon(opportunity.type)}</div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="outline" className="text-xs">
+                            {getTypeLabel(opportunity.type)}
+                          </Badge>
+                          <Badge variant="default" className="text-xs">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Accepted
+                          </Badge>
+                        </div>
+                        <h3 className="font-semibold mb-1">{opportunity.title}</h3>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>From: {opportunity.from}</span>
+                          <span>•</span>
+                          <span>{opportunity.date}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+        </TabsContent>
 
-          <Tabs defaultValue="new">
-            <TabsList>
-              <TabsTrigger value="new">New ({taskRequests.filter((r) => r.status === "new").length})</TabsTrigger>
-              <TabsTrigger value="accepted">Accepted</TabsTrigger>
-              <TabsTrigger value="all">All</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="new" className="space-y-3 mt-4">
-              {taskRequests.filter((r) => r.status === "new").map(renderTaskCard)}
-            </TabsContent>
-
-            <TabsContent value="accepted" className="space-y-3 mt-4">
-              {taskRequests.filter((r) => r.status === "accepted").map(renderTaskCard)}
-            </TabsContent>
-
-            <TabsContent value="all" className="space-y-3 mt-4">
-              {taskRequests.map(renderTaskCard)}
-            </TabsContent>
-          </Tabs>
+        <TabsContent value="all" className="space-y-3 mt-4">
+          {contentOpportunities.map((opportunity) => (
+            <Card
+              key={opportunity.id}
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => handleOpenDetail(opportunity)}
+            >
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3 flex-1">
+                    <div className="text-primary">{getTypeIcon(opportunity.type)}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant="outline" className="text-xs">
+                          {getTypeLabel(opportunity.type)}
+                        </Badge>
+                        <Badge variant={opportunity.status === "new" ? "secondary" : "default"} className="text-xs">
+                          {opportunity.status}
+                        </Badge>
+                      </div>
+                      <h3 className="font-semibold mb-1">{opportunity.title}</h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>From: {opportunity.from}</span>
+                        <span>•</span>
+                        <span>{opportunity.date}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </TabsContent>
       </Tabs>
 
-      {/* Detailed View Modal/Overlay */}
-      {selectedOpp && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-background rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            {/* Header */}
-            <div className="p-6 border-b flex items-start justify-between bg-gradient-to-r from-primary/5 to-accent/5">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  {selectedOpp.priority === "hot" && (
-                    <Badge variant="destructive">
-                      🔥 HOT
-                    </Badge>
+      {/* Detail Modal */}
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          {selectedOpportunity && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-2 mb-2">
+                  {selectedOpportunity.priority === "hot" && (
+                    <Badge variant="destructive">🔥 HOT</Badge>
                   )}
-                  <Badge variant="outline">{getTypeLabel(selectedOpp.type)}</Badge>
-                  {selectedOpp.consentStatus === "obtained" && (
+                  <Badge variant="outline">{getTypeLabel(selectedOpportunity.type)}</Badge>
+                  {selectedOpportunity.consentStatus === "obtained" && (
                     <Badge variant="default">
                       <CheckCircle className="w-3 h-3 mr-1" />
                       Consent Obtained
                     </Badge>
                   )}
-                  {selectedOpp.consentStatus === "pending" && (
-                    <Badge variant="secondary">
-                      <Clock className="w-3 h-3 mr-1" />
-                      Consent Pending
-                    </Badge>
-                  )}
                 </div>
-                <h2 className="text-2xl font-bold mb-1">{selectedOpp.title}</h2>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <User className="w-4 h-4" />
-                    {selectedOpp.from}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    {selectedOpp.date}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Mail className="w-4 h-4" />
-                    {selectedOpp.fromEmail}
-                  </span>
-                </div>
-              </div>
-              <Button variant="ghost" size="icon" onClick={handleCloseDetails}>
-                <X className="w-5 h-5" />
-              </Button>
-            </div>
+                <DialogTitle className="text-xl">{selectedOpportunity.title}</DialogTitle>
+                <DialogDescription>
+                  From: {selectedOpportunity.from} • {selectedOpportunity.date}
+                </DialogDescription>
+              </DialogHeader>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Main Content - Left 2/3 */}
-                <div className="md:col-span-2 space-y-6">
+              <div className="grid grid-cols-3 gap-6">
+                {/* Left Column - Main Content */}
+                <div className="col-span-2 space-y-4">
                   {/* Description */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">Description</CardTitle>
+                      <CardTitle className="text-base">Description</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm">{selectedOpp.description}</p>
+                      <p className="text-sm">{selectedOpportunity.description}</p>
                     </CardContent>
                   </Card>
 
-                  {/* Patient Information */}
+                  {/* Patient Info */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <User className="w-5 h-5" />
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <User className="w-4 h-4" />
                         Patient Information
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="grid grid-cols-2 gap-4">
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <p className="text-xs text-muted-foreground">Patient Name</p>
-                          <p className="font-medium">{selectedOpp.patientInfo.name}</p>
+                          <p className="text-muted-foreground">Patient</p>
+                          <p className="font-medium">{selectedOpportunity.patientInfo.name}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Age</p>
-                          <p className="font-medium">{selectedOpp.patientInfo.age} years old</p>
+                          <p className="text-muted-foreground">Treatment</p>
+                          <p className="font-medium">{selectedOpportunity.patientInfo.treatment}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Treatment</p>
-                          <p className="font-medium">{selectedOpp.patientInfo.treatment}</p>
+                          <p className="text-muted-foreground">Doctor</p>
+                          <p className="font-medium">{selectedOpportunity.patientInfo.doctor}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Attending Doctor</p>
-                          <p className="font-medium">{selectedOpp.patientInfo.doctor}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Treatment Period</p>
-                          <p className="font-medium">
-                            {selectedOpp.patientInfo.startDate} - {selectedOpp.patientInfo.completedDate}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Satisfaction Rating</p>
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium">{selectedOpp.patientInfo.satisfaction}</span>
-                            <span className="text-amber-400">★</span>
-                          </div>
+                          <p className="text-muted-foreground">Satisfaction</p>
+                          <p className="font-medium">{selectedOpportunity.patientInfo.satisfaction} ★</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
                   {/* Consent Details */}
-                  <Card className={selectedOpp.consentStatus === "obtained" ? "border-2 border-green-200" : "border-2 border-orange-200"}>
+                  <Card className={selectedOpportunity.consentStatus === "obtained" ? "border-success" : "border-warning"}>
                     <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <FileCheck className="w-5 h-5" />
-                        Consent Information
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <FileCheck className="w-4 h-4" />
+                        Consent Status
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      {selectedOpp.consentStatus === "obtained" ? (
-                        <>
-                          <div className="grid grid-cols-2 gap-4">
+                    <CardContent>
+                      {selectedOpportunity.consentStatus === "obtained" ? (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                              <p className="text-xs text-muted-foreground">Signed By</p>
-                              <p className="font-medium">{selectedOpp.consentDetails.signedBy}</p>
+                              <p className="text-muted-foreground">Signed By</p>
+                              <p className="font-medium">{selectedOpportunity.consentDetails.signedBy}</p>
                             </div>
                             <div>
-                              <p className="text-xs text-muted-foreground">Signed Date</p>
-                              <p className="font-medium">{selectedOpp.consentDetails.signedDate}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Consent Form</p>
-                              <Button variant="link" className="h-auto p-0 text-sm">
-                                <Download className="w-3 h-3 mr-1" />
-                                {selectedOpp.consentDetails.consentForm}
-                              </Button>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Valid Until</p>
-                              <p className="font-medium">{selectedOpp.consentDetails.expiryDate}</p>
+                              <p className="text-muted-foreground">Date</p>
+                              <p className="font-medium">{selectedOpportunity.consentDetails.signedDate}</p>
                             </div>
                           </div>
                           <div>
-                            <p className="text-xs text-muted-foreground mb-2">Allowed Usage</p>
+                            <p className="text-sm text-muted-foreground mb-2">Allowed Usage:</p>
                             <div className="flex flex-wrap gap-2">
-                              {selectedOpp.consentDetails.allowedUsage.map((usage, i) => (
+                              {selectedOpportunity.consentDetails.allowedUsage.map((usage: string, i: number) => (
                                 <Badge key={i} variant="secondary" className="text-xs">
-                                  <CheckSquare className="w-3 h-3 mr-1" />
                                   {usage}
                                 </Badge>
                               ))}
                             </div>
                           </div>
-                        </>
+                        </div>
                       ) : (
                         <div className="text-center py-4">
-                          <AlertCircle className="w-12 h-12 text-orange-500 mx-auto mb-2" />
-                          <p className="font-medium mb-1">Consent Pending</p>
-                          <p className="text-sm text-muted-foreground">
-                            Đang chờ bệnh nhân ký consent form. Email đã được gửi.
-                          </p>
-                          <Button variant="outline" size="sm" className="mt-3">
-                            Resend Consent Request
+                          <AlertCircle className="w-10 h-10 text-warning mx-auto mb-2" />
+                          <p className="font-medium">Consent Pending</p>
+                          <p className="text-sm text-muted-foreground">Đang chờ bệnh nhân ký consent</p>
+                          <Button size="sm" variant="outline" className="mt-3">
+                            Send Reminder
                           </Button>
                         </div>
                       )}
                     </CardContent>
                   </Card>
 
-                  {/* Media Attached */}
+                  {/* Media */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <ImageIcon className="w-5 h-5" />
-                        Media Attached
-                      </CardTitle>
+                      <CardTitle className="text-base">Media Attached</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-3 gap-4">
-                        <div className="text-center p-4 border rounded-lg">
-                          <ImageIcon className="w-8 h-8 mx-auto mb-2 text-primary" />
-                          <p className="text-2xl font-bold">{selectedOpp.mediaAttached.photos}</p>
+                        <div className="text-center p-3 border rounded">
+                          <ImageIcon className="w-6 h-6 mx-auto mb-1 text-primary" />
+                          <p className="text-xl font-bold">{selectedOpportunity.mediaAttached.photos}</p>
                           <p className="text-xs text-muted-foreground">Photos</p>
-                          <Button variant="link" size="sm" className="mt-2 p-0 h-auto text-xs">
-                            View All
-                          </Button>
                         </div>
-                        <div className="text-center p-4 border rounded-lg">
-                          <Video className="w-8 h-8 mx-auto mb-2 text-primary" />
-                          <p className="text-2xl font-bold">{selectedOpp.mediaAttached.videos}</p>
+                        <div className="text-center p-3 border rounded">
+                          <Video className="w-6 h-6 mx-auto mb-1 text-primary" />
+                          <p className="text-xl font-bold">{selectedOpportunity.mediaAttached.videos}</p>
                           <p className="text-xs text-muted-foreground">Videos</p>
-                          <Button variant="link" size="sm" className="mt-2 p-0 h-auto text-xs">
-                            View All
-                          </Button>
                         </div>
-                        <div className="text-center p-4 border rounded-lg">
-                          <FileText className="w-8 h-8 mx-auto mb-2 text-primary" />
-                          <p className="text-2xl font-bold">{selectedOpp.mediaAttached.documents}</p>
-                          <p className="text-xs text-muted-foreground">Documents</p>
-                          <Button variant="link" size="sm" className="mt-2 p-0 h-auto text-xs">
-                            View All
-                          </Button>
+                        <div className="text-center p-3 border rounded">
+                          <FileText className="w-6 h-6 mx-auto mb-1 text-primary" />
+                          <p className="text-xl font-bold">{selectedOpportunity.mediaAttached.documents}</p>
+                          <p className="text-xs text-muted-foreground">Docs</p>
                         </div>
                       </div>
-                      <div className="mt-4 grid grid-cols-4 gap-2">
-                        {[1, 2, 3, 4].map((i) => (
-                          <div
-                            key={i}
-                            className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center cursor-pointer hover:shadow-md transition-shadow"
-                          >
-                            <ImageIcon className="w-8 h-8 text-gray-400" />
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Right Column - AI Suggestions */}
+                <div className="space-y-4">
+                  <Card className="border-primary/30">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        AI Content Suggestions
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {selectedOpportunity.suggestedContent.map((suggestion, i) => (
+                          <div key={i} className="p-2 bg-primary/5 rounded text-xs flex items-start gap-2">
+                            <Lightbulb className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
+                            <span>{suggestion}</span>
                           </div>
                         ))}
                       </div>
                     </CardContent>
                   </Card>
 
-                  {/* Timeline */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Clock className="w-5 h-5" />
-                        Timeline
-                      </CardTitle>
+                      <CardTitle className="text-base">Metrics</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {selectedOpp.timeline.map((item, index) => (
-                          <div key={index} className="flex gap-3">
-                            <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-                            <div className="flex-1">
-                              <p className="text-sm font-medium">{item.event}</p>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span>{item.date}</span>
-                                <span>•</span>
-                                <span>{item.user}</span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                    <CardContent className="space-y-3 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Est. Reach</p>
+                        <p className="font-medium">{selectedOpportunity.estimatedReach}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Content Value</p>
+                        <p className="font-medium">{selectedOpportunity.contentValue}</p>
                       </div>
                     </CardContent>
                   </Card>
 
-                  {/* Comments */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <MessageCircle className="w-5 h-5" />
-                        Comments & Questions
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <Textarea
-                          placeholder="Add a comment or ask a question..."
-                          value={comment}
-                          onChange={(e) => setComment(e.target.value)}
-                          rows={3}
-                        />
-                        <Button size="sm" onClick={handleSendComment}>
-                          <Send className="w-4 h-4 mr-2" />
-                          Send Comment
+                  {selectedOpportunity.status === "accepted" && (
+                    <Card className="border-success/30">
+                      <CardHeader>
+                        <CardTitle className="text-base">Convert to</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full gap-2"
+                          onClick={() => handleConvert("task")}
+                        >
+                          <CheckSquare className="w-4 h-4" />
+                          Create Task
                         </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full gap-2"
+                          onClick={() => handleConvert("proposal")}
+                        >
+                          <FileText className="w-4 h-4" />
+                          Create Proposal
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
+              </div>
 
-                {/* Sidebar - Right 1/3 */}
-                <div className="space-y-6">
-                  {/* Quick Stats */}
-                  <Card className="bg-gradient-to-br from-primary/5 to-accent/5">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Content Value</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Estimated Reach</p>
-                        <p className="text-xl font-bold text-primary">{selectedOpp.estimatedReach}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Content Value</p>
-                        <p className="text-sm font-medium">{selectedOpp.contentValue}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
+              <DialogFooter className="flex justify-between">
+                {selectedOpportunity.status === "new" && (
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={handleDecline} className="gap-2">
+                      <XCircle className="w-4 h-4" />
+                      Decline
+                    </Button>
+                    <Button onClick={handleAccept} className="gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      Accept
+                    </Button>
+                  </div>
+                )}
+                <Button variant="outline" onClick={() => setIsDetailOpen(false)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
-                  {/* Suggested Content */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Sparkles className="w-5 h-5" />
-                        Content Suggestions
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-2">
-                        {selectedOpp.suggestedContent.map((content, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm">
-                            <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                            <span>{content}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
+      {/* Convert Modal */}
+      <Dialog open={isConvertModalOpen} onOpenChange={setIsConvertModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {convertType === "task" ? "Convert to Task" : "Convert to Proposal"}
+            </DialogTitle>
+            <DialogDescription>
+              Pre-fill information from this opportunity
+            </DialogDescription>
+          </DialogHeader>
 
-                  {/* Actions */}
-                  <Card className="border-2">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Actions</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <Button className="w-full gap-2" onClick={handleAccept}>
-                        <CheckCircle className="w-4 h-4" />
-                        Accept & Create Task
-                      </Button>
-                      <Button variant="outline" className="w-full gap-2">
-                        <AlertCircle className="w-4 h-4" />
-                        Request More Info
-                      </Button>
-                      <Button variant="outline" className="w-full gap-2" onClick={handleDecline}>
-                        <XCircle className="w-4 h-4" />
-                        Decline
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
+          <div className="space-y-4">
+            <div>
+              <Label>Title</Label>
+              <Input
+                defaultValue={selectedOpportunity?.title}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Textarea
+                defaultValue={selectedOpportunity?.description}
+                rows={3}
+                className="mt-1"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Assignee</Label>
+                <Input placeholder="Chọn người phụ trách..." className="mt-1" />
+              </div>
+              <div>
+                <Label>Due Date</Label>
+                <Input type="date" className="mt-1" />
               </div>
             </div>
           </div>
-        </div>
-      )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsConvertModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => setIsConvertModalOpen(false)}>
+              {convertType === "task" ? "Create Task" : "Create Proposal"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

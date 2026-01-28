@@ -598,42 +598,44 @@ export function SocialListening() {
                 <CardTitle>Sentiment Trend</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={sentimentTrendData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Area
-                      type="monotone"
-                      dataKey="positive"
-                      stackId="1"
-                      stroke="#10b981"
-                      fill="#10b981"
-                      fillOpacity={0.6}
-                      name="Positive"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="neutral"
-                      stackId="1"
-                      stroke="#94a3b8"
-                      fill="#94a3b8"
-                      fillOpacity={0.6}
-                      name="Neutral"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="negative"
-                      stackId="1"
-                      stroke="#ef4444"
-                      fill="#ef4444"
-                      fillOpacity={0.6}
-                      name="Negative"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <div className="w-full h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={sentimentTrendData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Area
+                        type="monotone"
+                        dataKey="positive"
+                        stackId="1"
+                        stroke="#10b981"
+                        fill="#10b981"
+                        fillOpacity={0.6}
+                        name="Positive"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="neutral"
+                        stackId="1"
+                        stroke="#94a3b8"
+                        fill="#94a3b8"
+                        fillOpacity={0.6}
+                        name="Neutral"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="negative"
+                        stackId="1"
+                        stroke="#ef4444"
+                        fill="#ef4444"
+                        fillOpacity={0.6}
+                        name="Negative"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
 
@@ -642,25 +644,27 @@ export function SocialListening() {
                 <CardTitle>Sentiment Distribution</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={sentimentDistribution}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={(entry) => `${entry.name}: ${entry.value}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {sentimentDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <div className="w-full h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={sentimentDistribution}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={(entry) => `${entry.name}: ${entry.value}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {sentimentDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -903,31 +907,33 @@ export function SocialListening() {
               <CardTitle>Multi-Dimensional Comparison</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <RadarChart data={competitorComparisonData}>
-                  <PolarGrid />
-                  <PolarAngleAxis dataKey="metric" />
-                  <PolarRadiusAxis angle={90} domain={[0, 100]} />
-                  <Radar
-                    name="Greenfield"
-                    dataKey="greenfield"
-                    stroke="#0d9488"
-                    fill="#0d9488"
-                    fillOpacity={0.6}
-                  />
-                  <Radar
-                    name="Đông Nam"
-                    dataKey="dongnam"
-                    stroke="#f59e0b"
-                    fill="#f59e0b"
-                    fillOpacity={0.4}
-                  />
-                  <Radar name="Paris" dataKey="paris" stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.3} />
-                  <Radar name="Kim" dataKey="kim" stroke="#6b7280" fill="#6b7280" fillOpacity={0.2} />
-                  <Legend />
-                  <Tooltip />
-                </RadarChart>
-              </ResponsiveContainer>
+              <div className="w-full h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={competitorComparisonData}>
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="metric" />
+                    <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                    <Radar
+                      name="Greenfield"
+                      dataKey="greenfield"
+                      stroke="#0d9488"
+                      fill="#0d9488"
+                      fillOpacity={0.6}
+                    />
+                    <Radar
+                      name="Đông Nam"
+                      dataKey="dongnam"
+                      stroke="#f59e0b"
+                      fill="#f59e0b"
+                      fillOpacity={0.4}
+                    />
+                    <Radar name="Paris" dataKey="paris" stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.3} />
+                    <Radar name="Kim" dataKey="kim" stroke="#6b7280" fill="#6b7280" fillOpacity={0.2} />
+                    <Legend />
+                    <Tooltip />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
 
